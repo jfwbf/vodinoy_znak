@@ -1,0 +1,75 @@
+# Су таңбасын мәтіндік файлға енгізу функциясы
+def embed_watermark(input_file, output_file, watermark_text):
+
+    binary_watermark = ''.join(format(ord(char), '08b') for char in watermark_text)
+
+    # 0 -> бос орын, 1 -> табуляция
+    stego_watermark = ''.join(' ' if bit == '0' else '\t' for bit in binary_watermark)
+
+    with open(input_file, 'r', encoding='utf-8') as f:
+        content = f.read()
+
+    with open(output_file, 'w', encoding='utf-8') as f:
+        f.write(content + '\n' + stego_watermark)
+
+    print("Су таңбасы файлға енгізілді ✅")
+
+# Су таңбасын мәтіндік файлдан шығарып оқу функциясы
+def extract_watermark(stego_file):
+    with open(stego_file, 'r', encoding='utf-8') as f:
+        lines = f.readlines()
+
+    # Соңғы жолда су таңбасы бар деп есептейміз
+    watermark_line = lines[-1]
+
+    # 1. Символдарды биттерге ауыстыру
+    binary_data = ''.join('0' if char == ' ' else '1' for char in watermark_line if char in [' ', '\t'])
+
+    # 2. 8-биттік блоктарға бөліп, символдарға айналдыру
+    watermark_text = ''.join(chr(int(binary_data[i:i+8], 2)) for i in range(0, len(binary_data), 8))
+
+    print("🔍 Су таңбасы табылды:", watermark_text)
+    return watermark_text
+
+# Мысал:
+input_file = 'orig_text.txt'         # Бастапқы мәтіндік файл
+output_file = 'watermarked.txt'     # Су таңбасы енгізілген файл
+watermark_text = 'ILYAS2025'        # Су таңбасы (мысал)
+
+# Су таңбасын енгізу
+embed_watermark(input_file, output_file, watermark_text)
+
+# Су таңбасын шығарып оқу
+extract_watermark(output_file)
+
+
+ДЛЯ ПРОВЕРКИ КОД НИЖЕ НАХОДИТСЯ. СОВЕТУЮ ДЛЯ ПРОВЕРКИ СНАЧАЛА УБРАТЬ НИЖНУЮ ЧАСТЬ ПОТОМ ЗАПУСТИТЬ :
+
+import hashlib
+
+# Функция для вычисления хэша файла
+def calculate_hash(file_path):
+    sha256_hash = hashlib.sha256()  # Используем SHA-256
+    with open(file_path, "rb") as f:
+        # Читаем файл порциями по 4kB
+        for byte_block in iter(lambda: f.read(4096), b""):
+            sha256_hash.update(byte_block)
+    return sha256_hash.hexdigest()
+
+# Пути к файлам
+original_file = 'orig_text.txt'         # Без водяного знака
+watermarked_file = 'watermarked.txt'   # С водяным знаком
+
+# Вычисление хэш-сумм
+original_hash = calculate_hash(original_file)
+watermarked_hash = calculate_hash(watermarked_file)
+
+# Сравнение хэшей
+print(f"Хэш оригинального файла: {original_hash}")
+print(f"Хэш файла с водяным знаком: {watermarked_hash}")
+
+# Проверка, отличаются ли хэши
+if original_hash == watermarked_hash:
+    print("Файлы идентичны (водяной знак не найден).")
+else:
+    print("Файлы отличаются (водяной знак присутствует).")
